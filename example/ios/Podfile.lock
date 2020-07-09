@@ -1,0 +1,22 @@
+PODS:
+  - Flutter (1.0.0)
+  - onfido_flutter_sdk (0.0.1):
+    - Flutter
+
+DEPENDENCIES:
+  - Flutter (from `Flutter`)
+  - onfido_flutter_sdk (from `.symlinks/plugins/onfido_flutter_sdk/ios`)
+
+EXTERNAL SOURCES:
+  Flutter:
+    :path: Flutter
+  onfido_flutter_sdk:
+    :path: ".symlinks/plugins/onfido_flutter_sdk/ios"
+
+SPEC CHECKSUMS:
+  Flutter: 0e3d915762c693b495b44d77113d4970485de6ec
+  onfido_flutter_sdk: 940c31a7746e12f9671b7f925f733ceff88ade7d
+
+PODFILE CHECKSUM: c34e2287a9ccaa606aeceab922830efb9a6ff69a
+
+COCOAPODS: 1.9.3
