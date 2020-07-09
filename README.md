@@ -1,14 +1,25 @@
 # onfido_flutter_sdk
 
-A new flutter plugin project.
+Flutter wrapper around the official Onfido SDK
 
-## Getting Started
+## Android
+Supports API 20+
 
-This project is a starting point for a Flutter
-[plug-in package](https://flutter.dev/developing-packages/),
-a specialized package that includes platform-specific implementation code for
-Android and/or iOS.
+Add the following to your `AndroidManifest.xml`
+```xml
+<uses-permission android:name="android.permission.CAMERA" />
+<uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+```
 
-For help getting started with Flutter, view our 
-[online documentation](https://flutter.dev/docs), which offers tutorials, 
-samples, guidance on mobile development, and a full API reference.
+
+## iOS
+Supports iOS 10+
+
+Add the following permissions to your `Info.plist`
+```xml
+<key>NSCameraUsageDescription</key>
+<string>Required for document and facial capture</string>
+<key>NSMicrophoneUsageDescription</key>
+<string>Required for video capture</string>
+```

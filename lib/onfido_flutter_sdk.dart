@@ -6,8 +6,18 @@ class OnfidoFlutterSdk {
   static const MethodChannel _channel =
       const MethodChannel('onfido_flutter_sdk');
 
-  static Future<String> get platformVersion async {
-    final String version = await _channel.invokeMethod('getPlatformVersion');
-    return version;
+  final String sdkToken;
+
+  OnfidoFlutterSdk({this.sdkToken})
+      : assert(sdkToken != null && sdkToken.isNotEmpty);
+
+  Future<String> startFlow() async {
+    final String message = await _channel.invokeMethod(
+      'startFlow',
+      {
+        "sdkToken": sdkToken,
+      },
+    );
+    return message;
   }
 }
