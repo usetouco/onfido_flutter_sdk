@@ -13,6 +13,7 @@ import com.onfido.android.sdk.capture.upload.Captures
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
+import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
@@ -21,17 +22,38 @@ import io.flutter.plugin.common.PluginRegistry
 import io.flutter.plugin.common.PluginRegistry.Registrar
 
 class OnfidoFlutterSdkPlugin() : FlutterPlugin, MethodCallHandler, ActivityAware, PluginRegistry.ActivityResultListener {
-    private lateinit var channel: MethodChannel
-    private var client: Onfido? = null
+    private lateinit var methodChannel: MethodChannel
+
+    private var onfidoSdk: Onfido? = null
+
     private var activityBinding: ActivityPluginBinding? = null
+
     private var startFlowResult: Result? = null
 
-    override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
-        channel = MethodChannel(
-                flutterPluginBinding.getFlutterEngine().getDartExecutor(),
-                "onfido_flutter_sdk"
-        )
-        channel.setMethodCallHandler(this)
+    private fun onActivityBinding(binding: ActivityPluginBinding) {
+        onfidoSdk = OnfidoFactory.create(binding.activity.applicationContext).client
+        this.activityBinding = binding
+        binding.addActivityResultListener(this)
+    }
+
+    private fun onActivityUnbinding() {
+        activityBinding?.removeActivityResultListener(this)
+        this.activityBinding = null
+
+        onfidoSdk = null
+    }
+
+    private fun onAttachedToEngine(messenger: BinaryMessenger) {
+        methodChannel = MethodChannel(messenger, channelName)
+        methodChannel.setMethodCallHandler(this)
+    }
+
+    override fun onAttachedToEngine(@NonNull binding: FlutterPlugin.FlutterPluginBinding) {
+        onAttachedToEngine(binding.binaryMessenger)
+    }
+
+    override fun onDetachedFromEngine(@NonNull binding: FlutterPlugin.FlutterPluginBinding) {
+        methodChannel.setMethodCallHandler(null)
     }
 
     // This static function is optional and equivalent to onAttachedToEngine. It supports the old
@@ -39,87 +61,100 @@ class OnfidoFlutterSdkPlugin() : FlutterPlugin, MethodCallHandler, ActivityAware
     // plugin registration via this function while apps migrate to use the new Android APIs
     // post-flutter-1.12 via https://flutter.dev/go/android-project-migration.
     companion object {
+        private const val onfidoRequestCode = 49564
+
+        private const val channelName = "onfido_flutter_sdk"
+
         @JvmStatic
         fun registerWith(registrar: Registrar) {
-            val channel = MethodChannel(registrar.messenger(), "onfido_flutter_sdk")
-            channel.setMethodCallHandler(OnfidoFlutterSdkPlugin())
+            val plugin = OnfidoFlutterSdkPlugin()
+            plugin.onAttachedToEngine(registrar.messenger())
+
+            registrar.addActivityResultListener(plugin)
         }
     }
 
-    override fun onDetachedFromEngine(@NonNull binding: FlutterPlugin.FlutterPluginBinding) {
-        channel.setMethodCallHandler(null)
+    override fun onAttachedToActivity(binding: ActivityPluginBinding) {
+        onActivityBinding(binding)
     }
 
     override fun onDetachedFromActivity() {
-        activityBinding = null
-        client = null
+        onActivityUnbinding()
     }
 
     override fun onReattachedToActivityForConfigChanges(binding: ActivityPluginBinding) {
-        activityBinding = binding
-        client = OnfidoFactory.create(binding.activity.applicationContext).client
-    }
-
-    override fun onAttachedToActivity(binding: ActivityPluginBinding) {
-        activityBinding = binding
-        client = OnfidoFactory.create(binding.activity.applicationContext).client
+       onActivityBinding(binding)
     }
 
     override fun onDetachedFromActivityForConfigChanges() {
-        activityBinding = null
-        client = null
+        onActivityUnbinding()
     }
 
     override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: Result) {
         when (call.method) {
             "startFlow" -> {
-                if (client != null && activityBinding != null) {
-                    val sdkToken = call.argument<String>("sdkToken")!!
-                    startFlow(sdkToken)
+                if (onfidoSdk != null && activityBinding != null) {
                     startFlowResult = result
+
+                    val sdkToken = call.argument<String>("sdkToken")!!
+                    val stepsArg = call.argument<List<String>>("flowSteps")!!
+                    val steps = toFlowSteps(stepsArg)
+
+                    startFlow(sdkToken, steps)
                 }
             }
             else -> result.notImplemented()
         }
     }
 
-    private fun startFlow(sdkToken: String) {
-        val flowSteps = arrayOf(
-                FlowStep.WELCOME,
-                FlowStep.CAPTURE_DOCUMENT,
-                FlowStep.CAPTURE_FACE,
-                FlowStep.FINAL
-        )
+    private fun toFlowSteps(flowSteps: List<String>) : Array<FlowStep> {
+        val stringToStep : (String) -> FlowStep = {
+            when (it) {
+                "welcome" -> FlowStep.WELCOME
+                "captureDocument" -> FlowStep.CAPTURE_DOCUMENT
+                "captureFace" -> FlowStep.CAPTURE_FACE
+                "finalScreen" -> FlowStep.FINAL
+                else -> FlowStep.FINAL
+            }
+        }
 
+        return flowSteps.map(stringToStep).toTypedArray()
+    }
+
+    private fun startFlow(sdkToken: String, flowSteps: Array<FlowStep>) {
         val onfidoConfig = OnfidoConfig.builder(activityBinding!!.activity.applicationContext)
                 .withSDKToken(sdkToken)
                 .withCustomFlow(flowSteps)
                 .build()
 
-        client!!.startActivityForResult(
+        onfidoSdk!!.startActivityForResult(
                 activityBinding!!.activity,
-                1,
+                onfidoRequestCode,
                 onfidoConfig
         )
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?): Boolean {
-        client!!.handleActivityResult(resultCode, data, object : OnfidoResultListener {
-            override fun userExited(exitCode: ExitCode) {
-                startFlowResult?.success("userExited")
-            }
+        if (requestCode == onfidoRequestCode) {
+            onfidoSdk!!.handleActivityResult(resultCode, data, object : OnfidoResultListener {
+                override fun userExited(exitCode: ExitCode) {
+                    startFlowResult?.success("userExited")
+                }
 
-            override fun userCompleted(captures: Captures) {
-                startFlowResult?.success("userCompleted")
-            }
+                override fun userCompleted(captures: Captures) {
+                    startFlowResult?.success("userCompleted")
+                }
 
-            override fun onError(e: OnfidoException) {
-                startFlowResult?.success("onError")
-            }
-        })
+                override fun onError(exception: OnfidoException) {
+                    startFlowResult?.success("onError")
+                }
+            })
 
-        startFlowResult = null
-        return true
+            startFlowResult = null
+            return true
+        }
+
+        return  false
     }
 
 }
