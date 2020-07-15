@@ -22,34 +22,38 @@ class OnfidoFlutterSdk {
   final List<FlowStep> flowSteps;
 
   // An exception occurred during the flow
-  final VoidCallback onError;
+  final Function(String) onError;
 
   // The user has successfully completed the flow,
   // and the captured photos/videos have been uploaded
-  final VoidCallback userCompleted;
+  final VoidCallback onUserCompleted;
 
   // User left the sdk flow without completing it
-  final VoidCallback userExited;
+  final VoidCallback onUserExited;
 
-  // TODO(luca): add custom color
   OnfidoFlutterSdk({
     @required this.sdkToken,
     this.flowSteps,
     this.onError,
-    this.userCompleted,
-    this.userExited,
+    this.onUserCompleted,
+    this.onUserExited,
   }) : assert(sdkToken != null && sdkToken.isNotEmpty);
 
   Future<void> startFlow() async {
     List<FlowStep> steps;
 
     if (flowSteps == null || flowSteps.isEmpty) {
-      steps = [FlowStep.captureDocument, FlowStep.captureFace];
+      steps = [
+        FlowStep.welcome,
+        FlowStep.captureDocument,
+        FlowStep.captureFace,
+        FlowStep.finalScreen,
+      ];
     } else {
       steps = flowSteps;
     }
 
-    final String message = await _channel.invokeMethod(
+    final response = await _channel.invokeMethod(
       'startFlow',
       {
         "sdkToken": sdkToken,
@@ -57,19 +61,23 @@ class OnfidoFlutterSdk {
       },
     );
 
-    if (message != null) {
-      if (message == "onError" && onError != null) {
-        onError.call();
+    final data = Map<String, dynamic>.from(response);
+
+    final method = data['method'] as String;
+
+    if (method != null) {
+      if (method == "onError" && onError != null) {
+        onError.call(data['message'] as String);
         return;
       }
 
-      if (message == "userCompleted" && userCompleted != null) {
-        userCompleted.call();
+      if (method == "onUserCompleted" && onUserCompleted != null) {
+        onUserCompleted.call();
         return;
       }
 
-      if (message == "userExited" && userExited != null) {
-        userExited.call();
+      if (method == "onUserExited" && onUserExited != null) {
+        onUserExited.call();
         return;
       }
     }
