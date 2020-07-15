@@ -83,7 +83,7 @@ class OnfidoFlutterSdkPlugin() : FlutterPlugin, MethodCallHandler, ActivityAware
     }
 
     override fun onReattachedToActivityForConfigChanges(binding: ActivityPluginBinding) {
-       onActivityBinding(binding)
+        onActivityBinding(binding)
     }
 
     override fun onDetachedFromActivityForConfigChanges() {
@@ -107,8 +107,8 @@ class OnfidoFlutterSdkPlugin() : FlutterPlugin, MethodCallHandler, ActivityAware
         }
     }
 
-    private fun toFlowSteps(flowSteps: List<String>) : Array<FlowStep> {
-        val stringToStep : (String) -> FlowStep = {
+    private fun toFlowSteps(flowSteps: List<String>): Array<FlowStep> {
+        val stringToStep: (String) -> FlowStep = {
             when (it) {
                 "welcome" -> FlowStep.WELCOME
                 "captureDocument" -> FlowStep.CAPTURE_DOCUMENT
@@ -138,15 +138,22 @@ class OnfidoFlutterSdkPlugin() : FlutterPlugin, MethodCallHandler, ActivityAware
         if (requestCode == onfidoRequestCode) {
             onfidoSdk!!.handleActivityResult(resultCode, data, object : OnfidoResultListener {
                 override fun userExited(exitCode: ExitCode) {
-                    startFlowResult?.success("userExited")
+                    startFlowResult?.success(hashMapOf(
+                            "method" to "onUserExited"
+                    ))
                 }
 
                 override fun userCompleted(captures: Captures) {
-                    startFlowResult?.success("userCompleted")
+                    startFlowResult?.success(hashMapOf(
+                            "method" to "onUserCompleted"
+                    ))
                 }
 
                 override fun onError(exception: OnfidoException) {
-                    startFlowResult?.success("onError")
+                    startFlowResult?.success(hashMapOf(
+                            "method" to "onError",
+                            "message" to exception.message
+                    ))
                 }
             })
 
@@ -154,7 +161,7 @@ class OnfidoFlutterSdkPlugin() : FlutterPlugin, MethodCallHandler, ActivityAware
             return true
         }
 
-        return  false
+        return false
     }
 
 }

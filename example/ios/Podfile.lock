@@ -1,19 +1,9 @@
 PODS:
   - Flutter (1.0.0)
-  - Onfido (8.0.0):
-    - SwiftyJSON (~> 3.1)
-    - Swinject (< 2.3)
-    - ZSWTaggedString (= 4.0)
-    - ZSWTappableLabel (= 2.0)
+  - Onfido (18.3.0)
   - onfido_flutter_sdk (0.0.1):
     - Flutter
-    - Onfido
-  - SwiftyJSON (3.1.4)
-  - Swinject (2.2.0)
-  - ZSWTaggedString (4.0):
-    - ZSWTaggedString/Core (= 4.0)
-  - ZSWTaggedString/Core (4.0)
-  - ZSWTappableLabel (2.0)
+    - Onfido (~> 18.3.0)
 
 DEPENDENCIES:
   - Flutter (from `Flutter`)
@@ -22,10 +12,6 @@ DEPENDENCIES:
 SPEC REPOS:
   trunk:
     - Onfido
-    - SwiftyJSON
-    - Swinject
-    - ZSWTaggedString
-    - ZSWTappableLabel
 
 EXTERNAL SOURCES:
   Flutter:
@@ -35,12 +21,8 @@ EXTERNAL SOURCES:
 
 SPEC CHECKSUMS:
   Flutter: 0e3d915762c693b495b44d77113d4970485de6ec
-  Onfido: d31906f57600908415cefe810033129144f2a2e1
-  onfido_flutter_sdk: d97dede5cdee2a5d22dec921e19ce58cff1e5e1c
-  SwiftyJSON: c2842d878f95482ffceec5709abc3d05680c0220
-  Swinject: 4ca48bca7de5f398229a26abe1ac902b9f3ee541
-  ZSWTaggedString: 3b06dc0fc32138bd15688a84167b0867c7353f3c
-  ZSWTappableLabel: cff84c0a55e30f2141f7dac24e5903302a7e35ec
+  Onfido: 572cb9c1ab40277318528584363cac22cc1ada21
+  onfido_flutter_sdk: e9c1bcf7ac8ff66e7fb2c4f2f8ae689e5fc6ed24
 
 PODFILE CHECKSUM: c34e2287a9ccaa606aeceab922830efb9a6ff69a
 
