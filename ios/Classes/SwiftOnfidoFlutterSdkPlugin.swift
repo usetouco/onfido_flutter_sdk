@@ -22,9 +22,9 @@ public class SwiftOnfidoFlutterSdkPlugin: NSObject, FlutterPlugin {
             let buttonsTextColor: String? = arguments["buttonsTextColor"] as? String
             let supportDarkMode: Bool = arguments["iosSupportDarkMode"] as! Bool
 
-            let primaryColor = buttonsColor != nil ? fromHex(hex: buttonsColor!) : UIColor.primaryColor
-            let primaryTitleColor = buttonsTextColor != nil ? fromHex(hex: buttonsTextColor!) : UIColor.white
-            let primaryBackgroundPressedColor = buttonsPressedColor != nil ? fromHex(hex: buttonsPressedColor!) : UIColor.primaryButtonColorPressed
+            let primaryColor = buttonsColor != nil ? UIColor.from(hex: buttonsColor!) : UIColor.primaryColor
+            let primaryTitleColor = buttonsTextColor != nil ? UIColor.from(hex: buttonsTextColor!) : UIColor.white
+            let primaryBackgroundPressedColor = buttonsPressedColor != nil ? UIColor.from(hex: buttonsPressedColor!) : UIColor.primaryButtonColorPressed
             
             let appearance = Appearance(
                 primaryColor: primaryColor,
@@ -86,29 +86,6 @@ public class SwiftOnfidoFlutterSdkPlugin: NSObject, FlutterPlugin {
         let onfidoRun = try! onfidoFlow.run()
         onfidoRun.modalPresentationStyle = .fullScreen
         UIApplication.shared.windows.first?.rootViewController?.present(onfidoRun, animated: true)
-    }
-    
-    private func fromHex(hex: String) -> UIColor {
-        let hexString = hex.trimmingCharacters(in: .whitespacesAndNewlines)
-        let scanner = Scanner(string: hexString)
-
-        if hexString.hasPrefix("#") {
-            scanner.scanLocation = 1
-        }
-
-        var color: UInt32 = 0
-        scanner.scanHexInt32(&color)
-
-        let mask = 0x000000FF
-        let redInt = Int(color >> 16) & mask
-        let greenInt = Int(color >> 8) & mask
-        let blueInt = Int(color) & mask
-
-        let red = CGFloat(redInt) / 255.0
-        let green = CGFloat(greenInt) / 255.0
-        let blue = CGFloat(blueInt) / 255.0
-
-        return UIColor(red: red, green: green, blue: blue, alpha: 1.0)
     }
 }
 
