@@ -7,7 +7,7 @@ enum FlowStep {
   welcome, //Welcome step with a step summary, Optional
   captureDocument, //Document Capture Step
   captureFace, //Face Capture Step
-  finalScreen //Final Screen Step, Optional
+  finalScreen //Final Screen Step, Optional and only available on Android
 }
 
 class OnfidoFlutterSdk {
@@ -31,26 +31,45 @@ class OnfidoFlutterSdk {
   // User left the sdk flow without completing it
   final VoidCallback onUserExited;
 
+  final Color buttonsColor;
+  final Color buttonsPressedColor;
+  final Color buttonsTextColor;
+  final bool iosSupportDarkMode;
+
+  /// Theme customizations will only applied to iOS.
+  /// Follow the official docs to customise colors on Android.
   OnfidoFlutterSdk({
     @required this.sdkToken,
     this.flowSteps,
     this.onError,
     this.onUserCompleted,
     this.onUserExited,
-  }) : assert(sdkToken != null && sdkToken.isNotEmpty);
+    this.buttonsColor,
+    this.buttonsPressedColor,
+    this.buttonsTextColor,
+    this.iosSupportDarkMode = false,
+  })  : assert(sdkToken != null && sdkToken.isNotEmpty),
+        assert(iosSupportDarkMode != null);
 
   Future<void> startFlow() async {
     List<FlowStep> steps;
 
     if (flowSteps == null || flowSteps.isEmpty) {
       steps = [
-        FlowStep.welcome,
         FlowStep.captureDocument,
         FlowStep.captureFace,
-        FlowStep.finalScreen,
       ];
     } else {
       steps = flowSteps;
+    }
+
+    if (!steps.contains(FlowStep.captureDocument) &&
+        !steps.contains(FlowStep.captureFace)) {
+      onError?.call(
+        "At least one of ${FlowStep.captureDocument} "
+        "or ${FlowStep.captureFace} must be specified",
+      );
+      return;
     }
 
     final response = await _channel.invokeMethod(
@@ -58,6 +77,10 @@ class OnfidoFlutterSdk {
       {
         "sdkToken": sdkToken,
         "flowSteps": steps.map((s) => s.toString().split('.').last).toList(),
+        "buttonsColor": toHexString(buttonsColor),
+        "buttonsPressedColor": toHexString(buttonsPressedColor),
+        "buttonsTextColor": toHexString(buttonsTextColor),
+        "iosSupportDarkMode": iosSupportDarkMode,
       },
     );
 
@@ -81,5 +104,11 @@ class OnfidoFlutterSdk {
         return;
       }
     }
+  }
+
+  String toHexString(Color color) {
+    assert(color != null);
+
+    return color.value.toRadixString(16).substring(2, 8);
   }
 }
